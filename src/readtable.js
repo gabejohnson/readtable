@@ -1,7 +1,5 @@
 // @flow
 
-import type CharStream from './char-stream';
-
 /*
  * 1. { key, mode: 'terminating', action } - creates a delimiter must return an Array/List
  * 2. { key, mode: 'non-terminating', action } - must return a Token or null/undefined. null/undefined simply consumes the read charstream.
@@ -13,7 +11,7 @@ const DISPATCH_OFFSET = 0x110000;
 
 type ReadtableKey = string | number | null;
 
-type Action = (stream: CharStream, ...rest: Array<any>) => any;
+type Action = (...args: Array<any>) => any;
 
 type ReadtableMode = 'terminating' | 'non-terminating' | 'dispatch';
 

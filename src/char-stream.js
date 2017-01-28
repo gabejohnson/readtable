@@ -17,8 +17,8 @@ export default class CharStream {
 
   get sourceInfo(): SourceInfo {
     // $FlowFixMe: decide on how to handle possible nullability
-    const { filename, position/*, source*/ } = sourceInfo.get(this);
-    return { filename, position/*, source*/ };
+    const { filename, position } = sourceInfo.get(this);
+    return { filename, position };
   }
 
   // returns the Unicode character charsToSkip ahead.

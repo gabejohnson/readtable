@@ -2,23 +2,32 @@
   "name": "readtable",
   "version": "0.0.1",
   "description": "Readtables in JavaScript!",
-  "main": "index.js",
+  "main": "dist/index.js",
   "engines": {
     "node": ">=7.0.0"
   },
   "author": "Gabe Johnson",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gabejohnson/shi/issues"
+    "url": "https://github.com/gabejohnson/readtable/issues"
   },
-  "homepage": "https://github.com/gabejohnson/shi#readme",
+  "homepage": "https://github.com/gabejohnson/readtable#readme",
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "lint": "eslint src test && flow",
-    "test": "ava"
+    "prebuild": "mkdir -p dist",
+    "build": "babel --source-maps-inline --out-dir dist src",
+    "pretest": "npm run lint",
+    "test": "ava",
+    "prepublish": "npm test && npm run build",
+    "postpublish": "rm -r dist"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/gabejohnson/shi.git"
+    "url": "git://github.com/gabejohnson/readtable.git"
   },
   "keywords": [
     "readtables",
