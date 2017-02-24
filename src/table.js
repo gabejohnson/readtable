@@ -1,6 +1,8 @@
-const blank = () => Object.create(null);
+// @flow
 
-const valueSym = Symbol('table/value');
+import S from 'sanctuary';
+
+const blank = () => Object.create(null);
 
 const descriptorEntry = value => ({ value, enumerable: true });
 
@@ -9,108 +11,109 @@ const makeDescriptor = ps => ps
 
 const tableEntry = o => {
   const entries = Object.entries(o);
-  const descriptor = entries.length === 0 ? { [valueSym]: descriptorEntry(o) } : makeDescriptor(entries);
+  const descriptor = (typeof o !== 'object') ?
+        { [S.toString(o)]: descriptorEntry(o) } :
+        makeDescriptor(entries);
   return Object.create(null, descriptor);
 };
 
-function privatize() {
-  const wm = new WeakMap();
-  return (k, v) => v ? wm.set(k, v) : wm.get(k);
-}
+const flPrefix = 'fantasy-land';
 
-const tables = privatize();
-
-const typeError = n => Error(`The argument to ${n} must be of type Table.`);
+const isDefault = o => S.equals(S.toString(o[1]), o[0]);
 
 export default class Table {
-  constructor(o) {
-    tables(this, o ? [tableEntry(o)] : []);
+  _table: Object;
+  constructor(a: any) {
+    this._table = a ? tableEntry(a) : blank();
   }
 
   static from(ps) {
-    const t = Table.empty();
-    tables(t, [Object.create(null, makeDescriptor(ps))]);
+    const t = S.empty(Table);
+    t._table = Object.create(null, makeDescriptor(ps));
     return t;
   }
 
-  static of(o) { return new Table(o); }
+  // $FlowFixMe: computed property keys not supported
+  static [`${flPrefix}/of`](a: any) { return new Table(a); }
 
-  static empty() { return new Table(); }
+  // $FlowFixMe: computed property keys not supported
+  static [`${flPrefix}/empty`]() { return new Table(); }
 
-  concat(t) {
-    if (!(t instanceof Table)) throw typeError('concat');
-    const newT = Table.empty();
-    tables(newT, tables(this).concat(tables(t)));
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/concat`](t: Table) {
+    const newT = S.empty(Table);
+    newT._table = S.concat(this._table, t._table);
     return newT;
   }
 
-  map(f) {
-    const t = Table.empty();
-    tables(t,
-           tables(this)
-           .map(e => Object.entries(e)
-                .reduce((o, [k,v]) => (o[k] = f(v), o), blank())));
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/map`](f: (a: any) => any): Table {
+    const t = S.empty(Table);
+    t._table = S.reduce_((t, [k, v]) => {
+      const result = f(v);
+      if (isDefault([k,v])) {
+        k = S.toString(result);
+      }
+      t[k] = result;
+      return t;
+    }, blank(), S.pairs(this._table));
     return t;
   }
 
-  reduce(f, acc) {
-    return Object.entries(this.extract())
-      .reduce((a, [k,v]) => f(a, {[k]:v}), acc);
-    // return tables(this)
-    //   .reduce((t, e) => Object.entries(e)
-    //           .reduce((a, [k,v]) => f(a, {[k]:v}), t), acc);
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/reduce`](f, acc) {
+    return S.reduce_((a, e) => f(a, e), acc, S.pairs(this._table));
   }
 
-  ap(t) {
-    if (!(t instanceof Table)) throw typeError('ap');
-    const f = t.get(valueSym);
-    if (typeof f !== 'function') throw Error('The argument must have a value of a function.');
-    return this.map(f);
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/ap`](t: Table) {
+    const f = t.get();
+    if (!S.is(Function, f)) throw Error('The argument must have a value of a function.');
+    return S.map(f, this);
   }
 
-  alt(t) {
-    if (!(t instanceof Table)) throw typeError('alt');
-    return tables(this).length > 0 ? this : t;
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/alt`](t: Table) {
+    return this._table.length > 0 ? this : t;
   }
 
-  extract() {
-    // return this.reduce((a, o) => Object.assign(a, o), blank());
-    return Object.assign(blank(), ...tables(this));
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/extend`](f: Function) {
+    return new Table(f(this));
   }
 
-  // keys() {
-  //   const ts = tables(this);
-  //   const keys = ts.reduce((ks, o) => ks.add(...Object.keys(o)), new Set());
-  //   return [...keys];
-  // }
-
-  append(o) {
-    return this.concat(Table.of(o));
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/extract`]() {
+    const pairs = S.pairs(this._table);
+    if (pairs.length === 0) return blank();
+    if (pairs.length == 1) {
+      const [[k,v]] = pairs;
+      if (isDefault(pairs[0])) return v;
+      const result = blank();
+      result[k] = v;
+      return result;
+    }
+    return Object.assign(blank(), this._table);
   }
 
-  inner() { return tables(this)[0]; }
-
-  outer() {
-    const t = Table.empty();
-    tables(t, tables(this).slice(1));
-    return t;
+  // $FlowFixMe: computed property keys not supported
+  [`${flPrefix}/equals`](t: Table) {
+    return S.equals(this._table, t._table);
   }
 
-  get(k) {
-    if (k == null) return k;
-    const vals = tables(this).filter(e => e[k]);
-    if (vals.length === 0 && k !== valueSym) return this.get(valueSym);
-    return (vals[vals.length-1] || blank())[k];
+  append(a: any) {
+    return S.concat(this, S.of(Table, a));
   }
 
-  // set(k, v) { return this.append({[k]: v}); }
+  get(k: string | Symbol) {
+    const key = typeof k === 'string' ? k : S.toString(k);
+    let result = S.get(S.K(true), key, this._table);
+    let defaultFlag = false;
+    if (S.isNothing(result)) {
+      defaultFlag = true;
+      result = S.find(isDefault, S.pairs(this._table));
+    }
+    result = S.maybeToNullable(result);
+    return !defaultFlag ? result : (result != null ? result[1] : void 0);
+  }
 }
-
-Table['fantasy-land/of'] = Table.of;
-Table['fantasy-land/empty'] = Table.empty;
-Table.prototype['fantasy-land/concat'] = Table.prototype.concat;
-Table.prototype['fantasy-land/map'] = Table.prototype.map;
-Table.prototype['fantasy-land/reduce'] = Table.prototype.reduce;
-Table.prototype['fantasy-land/alt'] = Table.prototype.alt;
-Table.prototype['fantasy-land/extract'] = Table.prototype.extract;
-Table.prototype['fantasy-land/ap'] = Table.prototype.ap;

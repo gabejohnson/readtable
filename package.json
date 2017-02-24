@@ -45,14 +45,16 @@
     "eslint": "^3.14.0",
     "eslint-plugin-flowtype": "^2.30.0",
     "flow-bin": "^0.38.0",
-    "sanctuary-type-classes": "^3.0.1"
+    "sanctuary-type-classes": "^3.0.1",
+    "sanctuary": "^0.12.1"
   },
   "ava": {
     "babel": "inherit",
     "files": [
       "test/test-char-stream.js",
       "test/test-readtable.js",
-      "test/test-reader.js"
+      "test/test-reader.js",
+      "test/test-table.js"
     ],
     "require": [
       "babel-register"
