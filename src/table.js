@@ -17,9 +17,31 @@ const tableEntry = o => {
   return Object.create(null, descriptor);
 };
 
-const flPrefix = 'fantasy-land';
+const fl = 'fantasy-land';
 
 const isDefault = o => S.equals(S.toString(o[1]), o[0]);
+
+const Table (t, d) => ({
+  t,
+  get: k => k in t ? t[k] : d,
+  `${fl}/equals`: S.equals(t),
+  `${fl}/concat`: S.compose(Table, S.concat(t), S.prop('t')),
+  `${fl}/map`: S.flip(S.map)(t),
+  `${fl}/reduce`: (f, init) => S.reduce_(f, init, t),
+  `${fl}/ap`: S.compose(
+    S.reduce_((acc, [k,f]) => k in t ? (acc[k] = f(t[k]), acc) : acc, blank()),
+    S.pairs),
+  `${fl}/alt`: S.alt(t),
+
+});
+
+Table.from = S.compose(Table, S.curry(Object.create)(null), makeDescriptor);
+Table[`${fl}/of`] = a => S.compose(Table, tableEntry);
+Table[`${fl}/empty`] = () => S.compose(Table, blank);
+
+const f = t.get();
+if (!S.is(Function, f)) throw Error('The argument must have a value of a function.');
+return S.map(f, this);
 
 export default class Table {
   _table: Object;
