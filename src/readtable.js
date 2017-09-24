@@ -34,7 +34,7 @@ export default class Readtable {
   }
 
   getMapping(key?: ReadtableKey): ReadtableMapping {
-    if (!isValidKey(key)) throw Error('Invalid key type:', key);
+    if (!isValidKey(key)) throw Error(`Invalid key type: ${(key: any)}`);
     key = convertKey(key);
     const { action, mode } = this._entries[key] || this._entries[0];
     const dispatchEntry = this._entries[key + DISPATCH_OFFSET] || this._entries[DISPATCH_OFFSET] || {};
@@ -48,7 +48,7 @@ export default class Readtable {
 }
 
 function addEntry(table: Array<ReadtableEntry>, { key, mode, action }: ReadtableEntry): Array<ReadtableEntry> {
-  if (!isValidEntry({key, mode, action})) throw Error('Invalid readtable entry:', {key, mode, action});
+  if (!isValidEntry({key, mode, action})) throw Error(`Invalid readtable entry: ${(key: any)}, ${mode}`);
 
   // null/undefined key is the default and will be converted to 0
   // chars will be converted via codePointAt
